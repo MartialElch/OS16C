@@ -1,5 +1,5 @@
 SRCS = $(wildcard *.c)
-OBJS = $(SRCS:.c=.o)
+OBJS = head.o $(SRCS:.c=.o)
 
 ASFLAGS = -l $(basename $@).lst
 CFLAGS = -std=c89 -m32 -march=pentium \
@@ -20,8 +20,8 @@ boot.flp:	boot kernel.bin
 	dd if=boot of=boot.flp bs=512 conv=notrunc
 	dd if=kernel.bin of=boot.flp bs=512 conv=notrunc seek=1
 
-kernel.bin:	head.o $(OBJS)
-	$(LD) $(LDFLAGS) -o $@ head.o $(OBJS)
+kernel.bin:	$(OBJS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJS)
 
 boot:	boot.asm
 	$(AS) $(ASFLAGS) -o $@ $<
@@ -31,6 +31,6 @@ head.o:	head.asm
 
 clean:
 	rm -f kernel.bin
-	rm -f $(OBJS)
+	rm -f  $(OBJS)
 	rm -f boot boot.flp
 	rm -f *.lst
