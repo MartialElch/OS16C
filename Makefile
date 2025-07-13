@@ -20,11 +20,14 @@ boot.flp:	boot kernel.bin
 	dd if=boot of=boot.flp bs=512 conv=notrunc
 	dd if=kernel.bin of=boot.flp bs=512 conv=notrunc seek=1
 
-kernel.bin:	$(OBJS)
-	$(LD) $(LDFLAGS) -o $@ $(OBJS)
+kernel.bin:	head.o $(OBJS)
+	$(LD) $(LDFLAGS) -o $@ head.o $(OBJS)
 
 boot:	boot.asm
-	$(AS) -o $@ $<
+	$(AS) $(ASFLAGS) -o $@ $<
+
+head.o:	head.asm
+	$(AS) $(ASFLAGS) -f elf -o $@ $<
 
 clean:
 	rm -f kernel.bin
