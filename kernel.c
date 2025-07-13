@@ -6,32 +6,20 @@ __asm__ (
 /******************************************************************************/
 #include "include/types.h"
 #include "include/fat.h"
-#include "include/key.h"
+
+extern int read_pos;
+extern int write_pos;
 
 static void syscall_09_write(uint16_t, uint16_t);
 static void syscall_4C_exit(void);
 
 void shell(void);
 
+void keyboardhandler(void);
+
+char sys_getchar(void);
+
 /******************************************************************************/
-static void outb(uint8_t v, uint16_t port) {
-	__asm__ volatile (
-		"outb %0, %1"
-		: /* no output */
-		: "a" (v), "dN" (port)
-		: /* no globber */);
-}
-
-static uint8_t inb(uint16_t port) {
-	uint8_t v;
-	__asm__ volatile (
-		"inb %1, %0"
-		: "=a" (v)
-		: "dN" (port)
-		: /* no globber */);
-	return v;
-}
-
 static void halt(void) {
 	__asm__ volatile (
 		"cli\n"
@@ -50,7 +38,7 @@ static void enable_irq(void) {
 }
 
 /******************************************************************************/
-static void sys_putchar(char c) {
+void sys_putchar(char c) {
 	__asm__ volatile (
 		"    mov  %0, %%al\n"
 		"    mov  $0x0e, %%ah\n"
@@ -62,7 +50,7 @@ static void sys_putchar(char c) {
 	return;
 }
 
-static void sys_puthex(uint8_t i) {
+void sys_puthex(uint8_t i) {
 	uint8_t c, d;
 
 	d = i;
@@ -247,55 +235,6 @@ void dir(char *buffer) {
 
 
 	return;
-}
-
-void bufferhandler(uint8_t c) {
-	if (!(c&0x80)) {			/* key press */
-		if (keymap[c] != '\0') {
-			key_buffer[write_pos++] = keymap[c];
-			sys_putchar(keymap[c]);
-		} else {
-			sys_puthex(c);
-		}
-	}
-
-	return;
-}
-
-void keyboardhandler(void) {
-	char a, c;
-
-	__asm__ volatile (
-		"    pusha"
-		: /* no output */
-		: /* no input */
-		: /* no globber */);
-
-	c = inb(0x60);
-	a = inb(0x61);
-	outb(a & 0x80, 0x61);
-	outb(a, 0x61);
-	outb(0x20, 0x20);
-
-	bufferhandler(c);
-
-	__asm__ volatile (
-		"    popa\n"
-		"    leave\n"
-		"    iretw"
-		: /* no output */
-		: /* no input */
-		: /* no globber */);
-
-	return;
-}
-
-char sys_getchar(void) {
-	if (write_pos > read_pos) {
-		return key_buffer[read_pos++];
-	} else {
-		return 0;
-	}
 }
 
 void sys_halt(void) {

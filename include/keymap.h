@@ -1,7 +1,3 @@
-static int read_pos = 0;
-static int write_pos = 0;
-static char key_buffer[256];
-
 static char keymap[] = {
 	'\0', '\0', '1',  '2',  '3',  '4',  '5',  '6',		/* 00 */
 	'7',  '8',  '9',  '0',  '\0', '\0', '\0', '\0',		/* 08 */
