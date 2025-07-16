@@ -5,16 +5,17 @@ __asm__ (
 
 /******************************************************************************/
 #include "include/types.h"
+#include "include/keyboard.h"
 #include "include/keymap.h"
 
 void sys_puthex(uint8_t i);
 void sys_putchar(char c);
 
 /******************************************************************************/
-int read_pos = 0;
-int write_pos = 0;
+int keyboard_readpos = 0;
+int keyboard_writepos = 0;
 
-static char key_buffer[256];
+static char keyboard_buffer[256];
 
 /******************************************************************************/
 /* system */
@@ -37,8 +38,8 @@ static uint8_t inb(uint16_t port) {
 }
 
 char sys_getchar(void) {
-	if (write_pos > read_pos) {
-		return key_buffer[read_pos++];
+	if (keyboard_writepos > keyboard_readpos) {
+		return keyboard_buffer[keyboard_readpos++];
 	} else {
 		return 0;
 	}
@@ -46,10 +47,10 @@ char sys_getchar(void) {
 
 /******************************************************************************/
 /* keyboard */
-void bufferhandler(uint8_t c) {
+void keyboard_addbuffer(uint8_t c) {
 	if (!(c&0x80)) {			/* key press */
 		if (keymap[c] != '\0') {
-			key_buffer[write_pos++] = keymap[c];
+			keyboard_buffer[keyboard_writepos++] = keymap[c];
 			sys_putchar(keymap[c]);
 		} else {
 			sys_puthex(c);
@@ -59,7 +60,7 @@ void bufferhandler(uint8_t c) {
 	return;
 }
 
-void keyboardhandler(void) {
+void keyboard_handler(void) {
 	char a, c;
 
 	__asm__ volatile (
@@ -74,7 +75,7 @@ void keyboardhandler(void) {
 	outb(a, 0x61);
 	outb(0x20, 0x20);
 
-	bufferhandler(c);
+	keyboard_addbuffer(c);
 
 	__asm__ volatile (
 		"    popa\n"

@@ -6,18 +6,14 @@ __asm__ (
 /******************************************************************************/
 #include "include/types.h"
 #include "include/fat.h"
+#include "include/keyboard.h"
+#include "include/shell.h"
 
-extern int read_pos;
-extern int write_pos;
+extern int keyboard_readpos;
+extern int keyboard_writepos;
 
 static void syscall_09_write(uint16_t, uint16_t);
 static void syscall_4C_exit(void);
-
-void shell(void);
-
-void keyboardhandler(void);
-
-char sys_getchar(void);
 
 /******************************************************************************/
 static void halt(void) {
@@ -449,15 +445,12 @@ void sys_exec(char *prg) {
 
 void kmain(void) {
 	static char buffer[512];
-	unsigned long int i, m;
-
-	volatile unsigned char *mem = (unsigned char *)0x0000;
 
 	sys_print("Start Kernel\n\r");
 	floppy_reset();
 	floppy_read(buffer, 2, 0, 1, 1);
 
-	registerinterrupt(9, keyboardhandler);
+	registerinterrupt(9, keyboard_handler);
 	registerinterrupt(0x21, sys_syscall);
 
 /*
@@ -608,7 +601,7 @@ void shell(void) {
 
 	sys_print("c:> ");
 	while (1) {
-		if (write_pos > read_pos) {
+		if (keyboard_writepos > keyboard_readpos) {
 			c = sys_getchar();
 			if (c == '\n') {
 				sys_print("\r");
